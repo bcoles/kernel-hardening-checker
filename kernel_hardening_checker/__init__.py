@@ -28,7 +28,7 @@ from .engine import print_unknown_options, populate_with_data, perform_checks, o
 # kernel-hardening-checker version
 __version__ = '0.6.10'
 
-SUPPORTED_ARCHS = ['X86_64', 'X86_32', 'ARM64', 'ARM']
+SUPPORTED_ARCHS = ['X86_64', 'X86_32', 'ARM64', 'ARM', 'RISCV', 'RISCV32', 'RISCV64']
 
 
 def mprint(mode: StrOrNone, *args: Any, **kwargs: Any) -> None:
@@ -89,6 +89,8 @@ def detect_arch_by_sysctl(fname: str) -> Tuple[StrOrNone, str]:
     arch_mapping = {
         'ARM64': r'^aarch64|armv8',
         'ARM': r'^armv[3-7]',
+        'RISCV32': r'^riscv32',
+        'RISCV64': r'^riscv64',
         'X86_32': r'^i[3-6]?86',
         'X86_64': r'^x86_64'
     }
