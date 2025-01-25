@@ -66,7 +66,7 @@ def add_kconfig_checks(l: List[ChecklistObjType], arch: str) -> None:
     if arch in ('X86_64', 'ARM64', 'X86_32'):
         l += [KconfigCheck('self_protection', 'defconfig', 'RANDOMIZE_BASE', 'y')]
     vmap_stack_is_set = KconfigCheck('self_protection', 'defconfig', 'VMAP_STACK', 'y')
-    if arch in ('X86_64', 'ARM64', 'ARM'):
+    if arch in ('X86_64', 'ARM64', 'ARM', 'RISCV'):
         l += [vmap_stack_is_set]
     if arch in ('X86_64', 'X86_32'):
         l += [KconfigCheck('self_protection', 'defconfig', 'DEBUG_WX', 'y')]
@@ -138,6 +138,12 @@ def add_kconfig_checks(l: List[ChecklistObjType], arch: str) -> None:
         l += [KconfigCheck('self_protection', 'defconfig', 'HARDEN_BRANCH_PREDICTOR', 'y')]
         l += [KconfigCheck('self_protection', 'defconfig', 'HARDEN_BRANCH_HISTORY', 'y')]
         l += [KconfigCheck('self_protection', 'defconfig', 'DEBUG_ALIGN_RODATA', 'y')]
+    if arch == 'RISCV':
+        l += [KconfigCheck('self_protection', 'defconfig', 'DEBUG_SG', 'y')]
+        l += [OR(KconfigCheck('self_protection', 'defconfig', 'LIST_HARDENED', 'y'),
+                 KconfigCheck('self_protection', 'defconfig', 'DEBUG_LIST', 'y'))]
+        l += [OR(KconfigCheck('self_protection', 'defconfig', 'SCHED_STACK_END_CHECK', 'y'),
+                 vmap_stack_is_set)]
 
     # 'self_protection', 'kspp'
     l += [KconfigCheck('self_protection', 'kspp', 'RANDOM_KMALLOC_CACHES', 'y')]
@@ -148,15 +154,17 @@ def add_kconfig_checks(l: List[ChecklistObjType], arch: str) -> None:
     l += [KconfigCheck('self_protection', 'kspp', 'SHUFFLE_PAGE_ALLOCATOR', 'y')]
     l += [KconfigCheck('self_protection', 'kspp', 'FORTIFY_SOURCE', 'y')]
     l += [KconfigCheck('self_protection', 'kspp', 'DEBUG_VIRTUAL', 'y')]
-    l += [KconfigCheck('self_protection', 'kspp', 'DEBUG_SG', 'y')]
+    if arch in ('ARM', 'ARM64', 'X86_32', 'X86_64'):
+        l += [KconfigCheck('self_protection', 'kspp', 'DEBUG_SG', 'y')]
     l += [KconfigCheck('self_protection', 'kspp', 'INIT_ON_ALLOC_DEFAULT_ON', 'y')]
     l += [KconfigCheck('self_protection', 'kspp', 'STATIC_USERMODEHELPER', 'y')] # needs userspace support
     l += [KconfigCheck('self_protection', 'kspp', 'SCHED_CORE', 'y')]
     l += [KconfigCheck('self_protection', 'kspp', 'SECURITY_LOCKDOWN_LSM', 'y')]
     l += [KconfigCheck('self_protection', 'kspp', 'SECURITY_LOCKDOWN_LSM_EARLY', 'y')]
     l += [KconfigCheck('self_protection', 'kspp', 'LOCK_DOWN_KERNEL_FORCE_CONFIDENTIALITY', 'y')]
-    l += [OR(KconfigCheck('self_protection', 'kspp', 'LIST_HARDENED', 'y'),
-             KconfigCheck('self_protection', 'kspp', 'DEBUG_LIST', 'y'))]
+    if arch in ('ARM', 'ARM64', 'X86_32', 'X86_64'):
+        l += [OR(KconfigCheck('self_protection', 'kspp', 'LIST_HARDENED', 'y'),
+                 KconfigCheck('self_protection', 'kspp', 'DEBUG_LIST', 'y'))]
     cfi_clang_is_set = KconfigCheck('self_protection', 'kspp', 'CFI_CLANG', 'y')
     cfi_clang_permissive_not_set = KconfigCheck('self_protection', 'kspp', 'CFI_PERMISSIVE', 'is not set')
     l += [OR(KconfigCheck('self_protection', 'kspp', 'DEBUG_CREDENTIALS', 'y'),
@@ -165,8 +173,9 @@ def add_kconfig_checks(l: List[ChecklistObjType], arch: str) -> None:
              AND(cfi_clang_is_set,
                  cfi_clang_permissive_not_set,
                  cc_is_clang))]
-    l += [OR(KconfigCheck('self_protection', 'kspp', 'SCHED_STACK_END_CHECK', 'y'),
-             vmap_stack_is_set)]
+    if arch in ('ARM', 'ARM64', 'X86_32', 'X86_64'):
+        l += [OR(KconfigCheck('self_protection', 'kspp', 'SCHED_STACK_END_CHECK', 'y'),
+                 vmap_stack_is_set)]
     kfence_is_set = KconfigCheck('self_protection', 'kspp', 'KFENCE', 'y')
     l += [kfence_is_set]
     l += [AND(KconfigCheck('self_protection', 'kspp', 'KFENCE_SAMPLE_INTERVAL', '100'),
@@ -308,7 +317,7 @@ def add_kconfig_checks(l: List[ChecklistObjType], arch: str) -> None:
     l += [KconfigCheck('cut_attack_surface', 'defconfig', 'SECCOMP_FILTER', 'y')]
     l += [OR(KconfigCheck('cut_attack_surface', 'defconfig', 'BPF_UNPRIV_DEFAULT_OFF', 'y'),
              bpf_syscall_not_set)] # see unprivileged_bpf_disabled
-    if arch in ('X86_64', 'ARM64', 'X86_32'):
+    if arch in ('X86_64', 'ARM64', 'X86_32', 'RISCV'):
         l += [OR(KconfigCheck('cut_attack_surface', 'defconfig', 'STRICT_DEVMEM', 'y'),
                  devmem_not_set)] # refers to LOCKDOWN
     if arch in ('X86_64', 'X86_32'):
